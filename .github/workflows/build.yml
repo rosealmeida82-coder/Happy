@@ -17,8 +17,15 @@ jobs:
           sudo apt-get install -y git zip unzip openjdk-17-jdk autoconf libtool pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev libtinfo5 cmake libffi-dev libssl-dev
           pip install buildozer cython==0.29.36 virtualenv
       - name: Build APK
-        run: buildozer -v android debug
+        shell: bash
+        run: buildozer -v android debug 2>&1 | tee build.log
+      - name: Mostrar erro
+        if: failure()
+        run: grep -v '^#     ' build.log | tail -n 60
       - uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: apk
-          path: bin/*.apk
+          path: |
+            bin/*.apk
+            build.log
