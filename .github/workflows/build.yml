@@ -21,7 +21,10 @@ jobs:
         run: buildozer -v android debug 2>&1 | tee build.log
       - name: Mostrar erro
         if: failure()
-        run: grep -v '^#     ' build.log | tail -n 60
+        run: |
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          grep -v '^#     ' build.log | tail -n 100 >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
       - uses: actions/upload-artifact@v4
         if: always()
         with:
