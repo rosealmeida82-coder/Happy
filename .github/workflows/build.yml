@@ -16,15 +16,40 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y git zip unzip openjdk-17-jdk autoconf libtool pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev libtinfo5 cmake libffi-dev libssl-dev
           pip install buildozer cython==0.29.36 virtualenv
+      - name: Criar buildozer.spec
+        run: |
+          cat > buildozer.spec << 'EOF'
+          [app]
+          title = FNAF Treslands
+          package.name = fnaftreslands
+          package.domain = org.jogo
+          source.dir = .
+          source.include_exts = py
+          version = 1.0
+          requirements = python3,pygame,pyjnius
+          orientation = landscape
+          fullscreen = 1
+          android.api = 33
+          android.minapi = 21
+          android.ndk = 25b
+          android.archs = arm64-v8a
+          android.accept_sdk_license = True
+          p4a.branch = v2024.01.21
+
+          [buildozer]
+          log_level = 2
+          EOF
+          grep requirements buildozer.spec
       - name: Build APK
         shell: bash
         run: buildozer -v android debug 2>&1 | tee build.log
       - name: Mostrar erro
         if: failure()
         run: |
-          echo '```' >> $GITHUB_STEP_SUMMARY
-          grep -v '^#     ' build.log | tail -n 100 >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
+          sed -r 's/\x1b\[[0-9;]*[mK]//g' build.log | grep -v '^#' | tr -d '%' > clean.log
+          grep -E "fatal error|error:|ErrorReturnCode|Could not|not found" clean.log | grep -v -E "Werror|Wl,|warning" | cut -c1-200 | tail -n 5 > erros.txt
+          tail -n 4 clean.log | cut -c1-200 >> erros.txt
+          while IFS= read -r l; do echo "::error::$l"; done < erros.txt
       - uses: actions/upload-artifact@v4
         if: always()
         with:
